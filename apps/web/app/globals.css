@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-900: #1a2e44;
+  --primary-800: #2c4a63;
+  --primary-700: #3d6280;
+}
+
+body {
+  background: #f9fafb;
+  color: #111827;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
