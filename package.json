@@ -1,0 +1,21 @@
+{
+  "name": "shiftflow",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "db:migrate": "pnpm --filter @shiftflow/db migrate:dev",
+    "db:generate": "pnpm --filter @shiftflow/db generate",
+    "db:studio": "pnpm --filter @shiftflow/db studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  }
+}

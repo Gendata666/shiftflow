@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Multi-tenancy root ───────────────────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users           User[]
+  venues          Venue[]
+  shiftTypes      ShiftType[]
+  schedules       Schedule[]
+  subscriptions   Subscription[]
+}
+
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email         String
+  name          String
+  passwordHash  String?
+  role          UserRole  @default(STAFF)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  staffProfile  StaffProfile?
+  sessions      Session[]
+  accounts      Account[]
+  preferences   Preference[]
+  auditLogs     AuditLog[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+model StaffProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contractHours   Int      @default(40)
+  roleLabel       String?
+  botChatIds      Json     @default("{}")
+  color           String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shiftAssignments ShiftAssignment[]
+}
+
+// ─── NextAuth v5 ─────────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Venue & Shift Types ──────────────────────────────────────────────────────
+
+model Venue {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  timezone  String   @default("Europe/Sofia")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schedules  Schedule[]
+
+  @@index([tenantId])
+}
+
+model ShiftType {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
+  label       String
+  startHour   Int
+  startMin    Int      @default(0)
+  endHour     Int
+  endMin      Int      @default(0)
+  durationH   Int
+  colorHex    String   @default("#B3D9FF")
+  weekendOnly Boolean  @default(false)
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shiftAssignments ShiftAssignment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+// ─── Schedule ─────────────────────────────────────────────────────────────────
+
+model SchedulePeriod {
+  id          String         @id @default(cuid())
+  tenantId    String
+  venueId     String
+  label       String
+  startDate   DateTime       @db.Date
+  endDate     DateTime       @db.Date
+  status      PeriodStatus   @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  schedules   Schedule[]
+  preferences Preference[]
+
+  @@index([tenantId, venueId])
+}
+
+enum PeriodStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Schedule {
+  id          String         @id @default(cuid())
+  tenantId    String
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  venueId     String
+  venue       Venue          @relation(fields: [venueId], references: [id])
+  periodId    String
+  period      SchedulePeriod @relation(fields: [periodId], references: [id])
+  generatedAt DateTime       @default(now())
+  publishedAt DateTime?
+  notes       String?
+
+  assignments ShiftAssignment[]
+  auditLogs   AuditLog[]
+
+  @@index([tenantId])
+}
+
+model ShiftAssignment {
+  id           String       @id @default(cuid())
+  scheduleId   String
+  schedule     Schedule     @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  staffId      String
+  staff        StaffProfile @relation(fields: [staffId], references: [id])
+  date         DateTime     @db.Date
+  shiftTypeId  String
+  shiftType    ShiftType    @relation(fields: [shiftTypeId], references: [id])
+  isManual     Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+
+  @@unique([scheduleId, staffId, date])
+  @@index([scheduleId])
+}
+
+// ─── Staff Preferences (from bots or web) ─────────────────────────────────────
+
+model Preference {
+  id           String           @id @default(cuid())
+  staffId      String
+  staff        User             @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  periodId     String?
+  period       SchedulePeriod?  @relation(fields: [periodId], references: [id])
+  source       PrefSource
+  type         PrefType
+  targetDates  DateTime[]       @db.Date
+  rawMessage   String?
+  parsedJson   Json?
+  notes        String?
+  status       PrefStatus       @default(PENDING)
+  resolvedAt   DateTime?
+  resolvedBy   String?
+  createdAt    DateTime         @default(now())
+
+  @@index([staffId])
+  @@index([periodId])
+}
+
+enum PrefSource {
+  TELEGRAM
+  WHATSAPP
+  VIBER
+  WEB
+}
+
+enum PrefType {
+  OFF_REQUEST
+  PREFERRED_SHIFT
+  UNAVAILABLE
+  NOTES
+}
+
+enum PrefStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id])
+  scheduleId String?
+  schedule   Schedule? @relation(fields: [scheduleId], references: [id])
+  action     String
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
+
+model Subscription {
+  id               String   @id @default(cuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stripeCustomerId String?
+  stripePriceId    String?
+  status           String   @default("trialing")
+  trialEndsAt      DateTime?
+  currentPeriodEnd DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([tenantId])
+}
