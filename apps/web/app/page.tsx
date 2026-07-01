@@ -1,6 +1,15 @@
+"use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { enterDemoMode } from "@/lib/demo-mode";
 
 export default function HomePage() {
+  const router = useRouter();
+
+  function tryDemo() {
+    enterDemoMode();
+    router.push("/dashboard/schedules");
+  }
   return (
     <main className="min-h-screen flex flex-col">
       {/* Hero */}
@@ -23,6 +32,12 @@ export default function HomePage() {
             No installation — just open your browser.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
+            <button
+              onClick={tryDemo}
+              className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-8 py-3 rounded-xl transition-colors text-lg shadow-lg"
+            >
+              ▶ Try Demo — No signup
+            </button>
             <Link
               href="/register"
               className="bg-blue-500 hover:bg-blue-400 text-white font-semibold px-8 py-3 rounded-xl transition-colors text-lg"

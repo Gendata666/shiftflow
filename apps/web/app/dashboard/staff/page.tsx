@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import { isDemoMode } from "@/lib/demo-mode";
+import { DEMO_STAFF } from "@/lib/demo-data";
 
 type Staff = {
-  id: string; name: string; email: string; role: string;
+  id: string; name: string; email?: string; role?: string;
   role_label: string | null; contract_hours: number; active: boolean; color: string | null;
 };
 
@@ -19,6 +21,11 @@ export default function StaffPage() {
 
   async function load() {
     setLoading(true);
+    if (isDemoMode()) {
+      setStaff(DEMO_STAFF.map((s) => ({ ...s, email: `${s.name.toLowerCase()}@demo.bg`, role: "STAFF" })));
+      setLoading(false);
+      return;
+    }
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/staff/`, { headers: authHeaders() });
     if (res.ok) setStaff(await res.json());
     setLoading(false);

@@ -1,15 +1,25 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isDemoMode } from "@/lib/demo-mode";
+import { DEMO_ANALYTICS } from "@/lib/demo-data";
 
 type HoursReport = {
   id: string; name: string; total_hours: number; days_worked: number;
-  shifts_by_duration: Record<string, number>;
+  shifts_by_duration: Record<number, number>;
 };
 
 export default function AnalyticsPage() {
   const [scheduleId, setScheduleId] = useState("");
   const [report, setReport] = useState<HoursReport[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
+
+  useEffect(() => {
+    if (isDemoMode()) {
+      setIsDemo(true);
+      setReport(DEMO_ANALYTICS as HoursReport[]);
+    }
+  }, []);
 
   function headers() {
     return { Authorization: `Bearer ${localStorage.getItem("access_token")}` };
@@ -25,21 +35,26 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Hours Analytics</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">Hours Analytics</h1>
+      {isDemo && (
+        <p className="text-sm text-gray-500 mb-6">Beach Bar · July 2026 · 28 days · 4 bartenders</p>
+      )}
 
-      <div className="flex gap-3 mb-6">
-        <input
-          placeholder="Paste schedule ID…"
-          value={scheduleId}
-          onChange={(e) => setScheduleId(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm w-72"
-        />
-        <button onClick={load} disabled={loading}
-          className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-60"
-          style={{ backgroundColor: "#2c4a63" }}>
-          {loading ? "Loading…" : "Load Report"}
-        </button>
-      </div>
+      {!isDemo && (
+        <div className="flex gap-3 mb-6">
+          <input
+            placeholder="Paste schedule ID…"
+            value={scheduleId}
+            onChange={(e) => setScheduleId(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm w-72"
+          />
+          <button onClick={load} disabled={loading}
+            className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-60"
+            style={{ backgroundColor: "#2c4a63" }}>
+            {loading ? "Loading…" : "Load Report"}
+          </button>
+        </div>
+      )}
 
       {report.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">

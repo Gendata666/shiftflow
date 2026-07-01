@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { isDemoMode } from "@/lib/demo-mode";
+import { DEMO_PREFERENCES } from "@/lib/demo-data";
 
 type Pref = {
   id: string; staff_name: string; source: string; type: string;
@@ -37,6 +39,11 @@ export default function PreferencesPage() {
 
   async function load() {
     setLoading(true);
+    if (isDemoMode()) {
+      setPrefs(DEMO_PREFERENCES as Pref[]);
+      setLoading(false);
+      return;
+    }
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/preferences/?status_filter=PENDING`, { headers: headers() });
     if (res.ok) setPrefs(await res.json());
     setLoading(false);

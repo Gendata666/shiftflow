@@ -2,9 +2,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { enterDemoMode } from "@/lib/demo-mode";
 
 export default function LoginPage() {
   const router = useRouter();
+
+  function tryDemo() {
+    enterDemoMode();
+    router.push("/dashboard/schedules");
+  }
   const [form, setForm] = useState({ email: "", password: "", tenant_slug: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,6 +93,15 @@ export default function LoginPage() {
             No account?{" "}
             <Link href="/register" className="text-blue-600 hover:underline">Register free</Link>
           </p>
+          <div className="border-t border-gray-100 pt-4">
+            <button
+              type="button"
+              onClick={tryDemo}
+              className="w-full py-2.5 rounded-lg font-semibold transition-colors bg-yellow-400 hover:bg-yellow-300 text-gray-900"
+            >
+              ▶ Try Demo — No signup required
+            </button>
+          </div>
         </form>
       </div>
     </div>
