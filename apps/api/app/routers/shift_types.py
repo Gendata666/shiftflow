@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 from typing import Optional
-import cuid2
+from app.core.ids import new_id
 
 from app.core.database import get_db
 from app.core.deps import require_manager
@@ -73,7 +73,7 @@ async def create_shift_type(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail=f"Shift code '{body.code}' already exists")
 
-    st = ShiftType(id=cuid2.cuid(), tenant_id=manager.tenant_id, **body.model_dump())
+    st = ShiftType(id=new_id(), tenant_id=manager.tenant_id, **body.model_dump())
     db.add(st)
     await db.commit()
     return {"id": st.id}

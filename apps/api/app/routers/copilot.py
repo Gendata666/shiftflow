@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from datetime import date
 
-import cuid2
+from app.core.ids import new_id
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
@@ -86,7 +86,7 @@ async def parse_brief(
         raise HTTPException(status_code=422, detail=f"Interpreted spec failed validation: {e}")
 
     record = SpecRecord(
-        id=cuid2.cuid(),
+        id=new_id(),
         tenant_id=manager.tenant_id,
         venue_id=body.venue_id,
         version=spec.version,
@@ -134,7 +134,7 @@ async def update_from_brief(
         raise HTTPException(status_code=422, detail=f"Diff failed to apply: {e}")
 
     new_record = SpecRecord(
-        id=cuid2.cuid(),
+        id=new_id(),
         tenant_id=manager.tenant_id,
         venue_id=record.venue_id,
         version=new_spec.version,
@@ -172,7 +172,7 @@ async def generate_schedule(
     record = await _load_spec_record(spec_id, manager.tenant_id, db)
     spec = ScheduleSpec.model_validate_json(record.spec_json)
 
-    run = ScheduleRun(id=cuid2.cuid(), tenant_id=manager.tenant_id, spec_id=spec_id)
+    run = ScheduleRun(id=new_id(), tenant_id=manager.tenant_id, spec_id=spec_id)
     db.add(run)
     await db.commit()
 
@@ -283,7 +283,7 @@ async def chat(
     async def persist_spec(new_spec: ScheduleSpec) -> None:
         async with AsyncSessionLocal() as session:
             session.add(SpecRecord(
-                id=cuid2.cuid(), tenant_id=tenant_id, venue_id=venue_id,
+                id=new_id(), tenant_id=tenant_id, venue_id=venue_id,
                 version=new_spec.version, status=SpecStatus.ACTIVE,
                 spec_json=new_spec.model_dump_json(),
                 summary="updated via copilot chat", created_by=created_by,
@@ -293,7 +293,7 @@ async def chat(
     async def persist_report(report: GenerateReport) -> None:
         async with AsyncSessionLocal() as session:
             session.add(ScheduleRun(
-                id=cuid2.cuid(), tenant_id=tenant_id, spec_id=body.spec_id,
+                id=new_id(), tenant_id=tenant_id, spec_id=body.spec_id,
                 status=RunStatus.INFEASIBLE if report.result.status == "infeasible" else RunStatus.DONE,
                 report_json=report.model_dump_json(),
             ))

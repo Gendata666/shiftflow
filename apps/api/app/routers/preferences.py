@@ -4,7 +4,7 @@ from sqlalchemy import select
 from pydantic import BaseModel
 from datetime import date
 from typing import Optional
-import cuid2
+from app.core.ids import new_id
 
 from app.core.database import get_db
 from app.core.deps import require_manager, get_current_user
@@ -65,7 +65,7 @@ async def create_preference(
     db: AsyncSession = Depends(get_db),
 ):
     pref = Preference(
-        id=cuid2.cuid(),
+        id=new_id(),
         staff_id=user.id,
         period_id=body.period_id,
         source=PrefSource.WEB,

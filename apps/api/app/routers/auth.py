@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel, EmailStr
-import cuid2
+from app.core.ids import new_id
 
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
@@ -38,11 +38,11 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Slug already taken")
 
-    tenant = Tenant(id=cuid2.cuid(), name=body.company, slug=body.slug, plan=Plan.FREE)
+    tenant = Tenant(id=new_id(), name=body.company, slug=body.slug, plan=Plan.FREE)
     db.add(tenant)
 
     user = User(
-        id=cuid2.cuid(),
+        id=new_id(),
         tenant_id=tenant.id,
         email=body.email,
         name=body.name,

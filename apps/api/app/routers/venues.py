@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 from typing import Optional
-import cuid2
+from app.core.ids import new_id
 
 from app.core.database import get_db
 from app.core.deps import require_manager
@@ -32,7 +32,7 @@ async def create_venue(
     manager: User = Depends(require_manager),
     db: AsyncSession = Depends(get_db),
 ):
-    venue = Venue(id=cuid2.cuid(), tenant_id=manager.tenant_id, **body.model_dump())
+    venue = Venue(id=new_id(), tenant_id=manager.tenant_id, **body.model_dump())
     db.add(venue)
     await db.commit()
     return {"id": venue.id}

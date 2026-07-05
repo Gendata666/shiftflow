@@ -6,7 +6,7 @@ Staff link their account via a 6-digit OTP shown in the dashboard.
 from fastapi import APIRouter, Request, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-import cuid2
+from app.core.ids import new_id
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -96,7 +96,7 @@ async def telegram_webhook(request: Request, db: AsyncSession = Depends(get_db))
 
     # Store preference
     pref = Preference(
-        id=cuid2.cuid(),
+        id=new_id(),
         staff_id=user.id,
         source=PrefSource.TELEGRAM,
         type=PrefType(parsed["type"]),

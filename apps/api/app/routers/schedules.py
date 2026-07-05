@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 from datetime import date
-import cuid2
+from app.core.ids import new_id
 
 from app.core.database import get_db
 from app.core.deps import require_manager
@@ -35,7 +35,7 @@ async def create_period(
     db: AsyncSession = Depends(get_db),
 ):
     period = SchedulePeriod(
-        id=cuid2.cuid(),
+        id=new_id(),
         tenant_id=manager.tenant_id,
         venue_id=body.venue_id,
         label=body.label,
@@ -65,7 +65,7 @@ async def generate_schedule(
         raise HTTPException(status_code=404, detail="Period not found")
 
     schedule = Schedule(
-        id=cuid2.cuid(),
+        id=new_id(),
         tenant_id=manager.tenant_id,
         venue_id=period.venue_id,
         period_id=period.id,
@@ -166,7 +166,7 @@ async def _run_solver(schedule_id: str, tenant_id: str, period: SchedulePeriod, 
         # Persist assignments
         for a in result.assignments:
             db.add(ShiftAssignment(
-                id=cuid2.cuid(),
+                id=new_id(),
                 schedule_id=schedule_id,
                 staff_id=a.profile_id,
                 date=a.date,

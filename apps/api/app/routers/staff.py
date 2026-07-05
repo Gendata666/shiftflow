@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-import cuid2
+from app.core.ids import new_id
 
 from app.core.database import get_db
 from app.core.deps import require_manager, get_current_user
@@ -69,9 +69,9 @@ async def create_staff(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already exists in this tenant")
 
-    temp_password = cuid2.cuid()[:12]
+    temp_password = new_id()[:12]
     user = User(
-        id=cuid2.cuid(),
+        id=new_id(),
         tenant_id=manager.tenant_id,
         email=body.email,
         name=body.name,
@@ -82,7 +82,7 @@ async def create_staff(
     await db.flush()
 
     profile = StaffProfile(
-        id=cuid2.cuid(),
+        id=new_id(),
         user_id=user.id,
         contract_hours=body.contract_hours,
         role_label=body.role_label,
