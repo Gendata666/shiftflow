@@ -7,6 +7,7 @@ import { DEMO_TENANT } from "@/lib/demo-data";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: "🏠" },
+  { href: "/dashboard/copilot", label: "AI Copilot", icon: "🤖" },
   { href: "/dashboard/schedules", label: "Schedules", icon: "📅" },
   { href: "/dashboard/staff", label: "Staff", icon: "👥" },
   { href: "/dashboard/preferences", label: "Preferences", icon: "💬" },

@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.deps import require_manager, get_current_user
 from app.models.user import User
 from app.models.preference import Preference, PrefSource, PrefType, PrefStatus
+from app.core.timeutil import utcnow
 
 router = APIRouter()
 
@@ -95,7 +96,7 @@ async def approve_preference(
     from datetime import datetime
     pref, _ = row
     pref.status = PrefStatus.APPROVED
-    pref.resolved_at = datetime.utcnow()
+    pref.resolved_at = utcnow()
     pref.resolved_by = manager.id
     await db.commit()
     return {"ok": True}
@@ -119,7 +120,7 @@ async def reject_preference(
     from datetime import datetime
     pref, _ = row
     pref.status = PrefStatus.REJECTED
-    pref.resolved_at = datetime.utcnow()
+    pref.resolved_at = utcnow()
     pref.resolved_by = manager.id
     await db.commit()
     return {"ok": True}

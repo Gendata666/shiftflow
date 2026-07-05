@@ -4,6 +4,7 @@ from datetime import datetime, date
 import enum
 
 from app.core.database import Base
+from app.core.timeutil import utcnow
 
 
 class PeriodStatus(str, enum.Enum):
@@ -22,8 +23,8 @@ class SchedulePeriod(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[PeriodStatus] = mapped_column(SAEnum(PeriodStatus), default=PeriodStatus.DRAFT)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     schedules = relationship("Schedule", back_populates="period")
     preferences = relationship("Preference", back_populates="period")
@@ -36,7 +37,7 @@ class Schedule(Base):
     tenant_id: Mapped[str] = mapped_column(String, ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
     venue_id: Mapped[str] = mapped_column(String, ForeignKey("venues.id"))
     period_id: Mapped[str] = mapped_column(String, ForeignKey("schedule_periods.id"))
-    generated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     published_at: Mapped[datetime | None] = mapped_column(DateTime)
     notes: Mapped[str | None] = mapped_column(String)
 
@@ -56,7 +57,7 @@ class ShiftAssignment(Base):
     date: Mapped[date] = mapped_column(Date, nullable=False)
     shift_type_id: Mapped[str] = mapped_column(String, ForeignKey("shift_types.id"))
     is_manual: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     schedule = relationship("Schedule", back_populates="assignments")
     staff = relationship("StaffProfile", back_populates="shift_assignments")

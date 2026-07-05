@@ -4,6 +4,7 @@ from datetime import datetime, date
 import enum
 
 from app.core.database import Base
+from app.core.timeutil import utcnow
 
 
 class PrefSource(str, enum.Enum):
@@ -41,7 +42,7 @@ class Preference(Base):
     status: Mapped[PrefStatus] = mapped_column(SAEnum(PrefStatus), default=PrefStatus.PENDING)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
     resolved_by: Mapped[str | None] = mapped_column(String)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     staff = relationship("User", back_populates="preferences")
     period = relationship("SchedulePeriod", back_populates="preferences")

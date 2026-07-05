@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
 from app.core.database import Base
+from app.core.timeutil import utcnow
 
 
 class AuditLog(Base):
@@ -14,7 +15,7 @@ class AuditLog(Base):
     schedule_id: Mapped[str | None] = mapped_column(String, ForeignKey("schedules.id"))
     action: Mapped[str] = mapped_column(String, nullable=False)
     meta: Mapped[dict | None] = mapped_column(JSON)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     actor = relationship("User")
     schedule = relationship("Schedule", back_populates="audit_logs")

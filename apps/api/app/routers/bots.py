@@ -6,11 +6,11 @@ Staff link their account via a 6-digit OTP shown in the dashboard.
 from fastapi import APIRouter, Request, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from pydantic import BaseModel
-import hashlib, hmac, json, cuid2
+import cuid2
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.models.user import User, StaffProfile
 from app.models.preference import Preference, PrefSource, PrefType, PrefStatus
 from app.services.preference_parser import parse_preference_message
@@ -22,13 +22,11 @@ router = APIRouter()
 # ─── OTP linking ─────────────────────────────────────────────────────────────
 
 @router.post("/telegram/otp")
-async def get_link_otp(user_id: str, db: AsyncSession = Depends(get_db)):
-    """Generate a 6-digit OTP for a staff member to link their Telegram account."""
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=404)
-    otp = generate_otp(user_id)
+async def get_link_otp(user: User = Depends(get_current_user)):
+    """Generate a 6-digit OTP for the *authenticated* staff member to link
+    their Telegram account. The identity comes from the JWT — accepting an
+    arbitrary user_id here would let anyone hijack any account's bot link."""
+    otp = generate_otp(user.id)
     return {"otp": otp, "expires_in": 600}
 
 

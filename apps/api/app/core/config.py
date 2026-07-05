@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import list
 
 
 class Settings(BaseSettings):
@@ -8,7 +7,12 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     SECRET_KEY: str
     DATABASE_URL: str
-    ANTHROPIC_API_KEY: str
+
+    # AI provider: "gemini" (free tier — pilot default) or "anthropic"
+    LLM_PROVIDER: str = "gemini"
+    ANTHROPIC_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash"  # paid upgrade: gemini-3.1-pro-preview
 
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]

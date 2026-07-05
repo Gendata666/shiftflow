@@ -4,6 +4,7 @@ from datetime import datetime
 import enum
 
 from app.core.database import Base
+from app.core.timeutil import utcnow
 
 
 class UserRole(str, enum.Enum):
@@ -22,8 +23,8 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(String)
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.STAFF)
     email_verified: Mapped[datetime | None] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     tenant = relationship("Tenant", back_populates="users")
     staff_profile = relationship("StaffProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -40,8 +41,8 @@ class StaffProfile(Base):
     bot_chat_ids: Mapped[dict] = mapped_column(JSON, default=dict)
     color: Mapped[str | None] = mapped_column(String)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     user = relationship("User", back_populates="staff_profile")
     shift_assignments = relationship("ShiftAssignment", back_populates="staff")

@@ -7,9 +7,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "db:migrate": "pnpm --filter @shiftflow/db migrate:dev",
-    "db:generate": "pnpm --filter @shiftflow/db generate",
-    "db:studio": "pnpm --filter @shiftflow/db studio"
+    "db:migrate": "cd apps/api && alembic upgrade head"
   },
   "devDependencies": {
     "turbo": "^2.3.3"

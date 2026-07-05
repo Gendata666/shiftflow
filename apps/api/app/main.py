@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
-from app.routers import auth, staff, venues, shift_types, schedules, preferences, export, analytics, bots
+from app.routers import auth, staff, venues, shift_types, schedules, preferences, export, analytics, bots, copilot
 
 
 @asynccontextmanager
@@ -12,6 +12,8 @@ async def lifespan(app: FastAPI):
     from app.core.database import engine
     yield
     # Shutdown: cleanup
+    from app.services.solver_runner import shutdown_pool
+    shutdown_pool()
     await engine.dispose()
 
 
@@ -40,6 +42,7 @@ app.include_router(preferences.router, prefix="/api/preferences", tags=["prefere
 app.include_router(export.router,      prefix="/api/export",      tags=["export"])
 app.include_router(analytics.router,   prefix="/api/analytics",   tags=["analytics"])
 app.include_router(bots.router,        prefix="/api/bots",        tags=["bots"])
+app.include_router(copilot.router,     prefix="/api/copilot",     tags=["copilot"])
 
 
 @app.get("/health")

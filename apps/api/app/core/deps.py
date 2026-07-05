@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.security import decode_token
-from app.models.user import User
+from app.models.user import User, UserRole
 
 bearer = HTTPBearer()
 
@@ -26,6 +26,6 @@ async def get_current_user(
 
 
 async def require_manager(user: User = Depends(get_current_user)) -> User:
-    if user.role not in ("MANAGER", "OWNER"):
+    if user.role not in (UserRole.MANAGER, UserRole.OWNER):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Manager access required")
     return user

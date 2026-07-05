@@ -5,3 +5,4 @@ from app.models.shift_type import ShiftType
 from app.models.schedule import SchedulePeriod, Schedule, ShiftAssignment
 from app.models.preference import Preference
 from app.models.audit import AuditLog
+from app.models.spec import SpecRecord, ScheduleRun

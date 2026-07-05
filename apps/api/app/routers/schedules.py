@@ -11,6 +11,7 @@ from app.models.user import User, StaffProfile
 from app.models.schedule import Schedule, SchedulePeriod, ShiftAssignment, PeriodStatus
 from app.models.shift_type import ShiftType
 from app.models.preference import Preference, PrefStatus, PrefType
+from app.core.timeutil import utcnow
 
 router = APIRouter()
 
@@ -148,7 +149,12 @@ async def _run_solver(schedule_id: str, tenant_id: str, period: SchedulePeriod, 
         )
 
         try:
-            result = solve(config)
+            # CP-SAT is CPU-bound — run it in the worker pool so the event
+            # loop keeps serving requests during the solve.
+            import asyncio
+            from app.services.solver_runner import _get_pool
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(_get_pool(), solve, config)
         except RuntimeError as e:
             # Store error in schedule notes
             sched_res = await db.execute(select(Schedule).where(Schedule.id == schedule_id))
@@ -224,7 +230,7 @@ async def publish_schedule(
     if not sched:
         raise HTTPException(status_code=404, detail="Schedule not found")
 
-    sched.published_at = datetime.utcnow()
+    sched.published_at = utcnow()
     period_res = await db.execute(select(SchedulePeriod).where(SchedulePeriod.id == sched.period_id))
     period = period_res.scalar_one()
     period.status = PeriodStatus.PUBLISHED
