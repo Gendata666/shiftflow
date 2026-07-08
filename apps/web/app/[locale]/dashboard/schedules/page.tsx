@@ -1,15 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { isDemoMode } from "@/lib/demo-mode";
 import {
   DEMO_STAFF, DEMO_SHIFT_TYPES, DEMO_SCHEDULE_VERIFIED,
-  DEMO_START_DATE, DAY_NAMES_BG,
+  DEMO_START_DATE, DAY_NAMES_BG, DAY_NAMES_EN,
 } from "@/lib/demo-data";
 
 type Venue = { id: string; name: string; };
 type Schedule = { id: string; period_id: string; generated_at: string; published_at: string | null; notes: string | null; assignments: unknown[]; };
 
 export default function SchedulesPage() {
+  const t = useTranslations("schedules");
+  const locale = useLocale();
+  const dayNames = locale === "bg" ? DAY_NAMES_BG : DAY_NAMES_EN;
   const [isDemo, setIsDemo] = useState(false);
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -61,20 +65,20 @@ export default function SchedulesPage() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Schedules</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{t("title")}</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Beach Bar · 07 Jul – 03 Aug 2026 · AI generated · ✅ 0 BAD sequences
+              {t("demoSubtitle")}
             </p>
           </div>
           <div className="flex gap-2">
-            <span className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400">PDF (demo)</span>
-            <span className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400">Excel (demo)</span>
+            <span className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400">{t("pdfDemo")}</span>
+            <span className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400">{t("excelDemo")}</span>
             <button
               onClick={() => setPublished((p) => !p)}
               className="px-3 py-1.5 rounded-lg text-sm text-white font-medium transition-colors"
               style={{ backgroundColor: published ? "#16a34a" : "#2c4a63" }}
             >
-              {published ? "Published ✓" : "Publish"}
+              {published ? t("publishedCheck") : t("publish")}
             </button>
           </div>
         </div>
@@ -97,17 +101,17 @@ export default function SchedulesPage() {
               <tr>
                 <th className="w-24 px-3 py-2 text-left text-white font-semibold border-r border-white/10"
                   style={{ backgroundColor: "#1a2e44" }} rowSpan={2}>
-                  Барман
+                  {t("roleColumn")}
                 </th>
                 {weeks.map((_, wi) => (
                   <th key={wi} colSpan={7} className="px-2 py-2 text-center text-white font-semibold border-r border-white/10 border-b border-white/10"
                     style={{ backgroundColor: "#2c4a63" }}>
-                    СЕДМИЦА {wi + 1}
+                    {t("week", { n: wi + 1 })}
                   </th>
                 ))}
                 <th colSpan={3} className="px-2 py-2 text-center text-white font-semibold"
                   style={{ backgroundColor: "#1a2e44" }}>
-                  Общо
+                  {t("total")}
                 </th>
               </tr>
               {/* Day headers */}
@@ -115,7 +119,7 @@ export default function SchedulesPage() {
                 {demoDays.map((day, i) => (
                   <th key={i} className="px-1 py-1.5 text-center font-medium border-r border-gray-200"
                     style={{ backgroundColor: day.getDay() === 0 || day.getDay() === 6 ? "#e8eef5" : "#eef2f7", color: "#555" }}>
-                    <div>{DAY_NAMES_BG[day.getDay() === 0 ? 6 : day.getDay() - 1]}</div>
+                    <div>{dayNames[day.getDay() === 0 ? 6 : day.getDay() - 1]}</div>
                     <div className="text-gray-400 font-normal">{day.getDate()}</div>
                   </th>
                 ))}
@@ -156,12 +160,7 @@ export default function SchedulesPage() {
           </table>
         </div>
 
-        <p className="text-xs text-gray-400 mt-3">
-          ✅ Всяка седмица: 2×8ч + 2×10ч + 3×12ч &nbsp;·&nbsp;
-          12h смени само Пет/Съб/Нед &nbsp;·&nbsp;
-          0 BAD последователности &nbsp;·&nbsp;
-          Приятна последователност: С1=Джедая, С2=Васил, С3=Ники, С4=Афродита
-        </p>
+        <p className="text-xs text-gray-400 mt-3">{t("summaryLine")}</p>
       </div>
     );
   }
@@ -169,36 +168,36 @@ export default function SchedulesPage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Schedules</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t("title")}</h1>
         <button onClick={() => setShowNew(!showNew)} className="px-4 py-2 rounded-lg text-white text-sm font-medium" style={{ backgroundColor: "#2c4a63" }}>
-          + New Period
+          {t("newPeriod")}
         </button>
       </div>
 
       {showNew && (
         <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6 space-y-4">
-          <h2 className="font-semibold text-gray-700">Create Schedule Period</h2>
+          <h2 className="font-semibold text-gray-700">{t("createPeriod")}</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Venue</label>
+              <label className="block text-sm text-gray-600 mb-1">{t("venue")}</label>
               <select value={form.venue_id} onChange={(e) => setForm({ ...form, venue_id: e.target.value })}
                 className="w-full border rounded-lg px-3 py-2 text-sm">
-                <option value="">Select venue…</option>
+                <option value="">{t("selectVenue")}</option>
                 {venues.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Label (e.g. July 2026)</label>
+              <label className="block text-sm text-gray-600 mb-1">{t("label")}</label>
               <input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })}
                 className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Start date</label>
+              <label className="block text-sm text-gray-600 mb-1">{t("startDate")}</label>
               <input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                 className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">End date</label>
+              <label className="block text-sm text-gray-600 mb-1">{t("endDate")}</label>
               <input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                 className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
@@ -215,9 +214,9 @@ export default function SchedulesPage() {
               className="px-5 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-60"
               style={{ backgroundColor: "#2c4a63" }}
             >
-              {generating ? "Generating schedule…" : "Generate with AI"}
+              {generating ? t("generating") : t("generateWithAi")}
             </button>
-            <button onClick={() => setShowNew(false)} className="px-5 py-2 rounded-lg border text-sm text-gray-600">Cancel</button>
+            <button onClick={() => setShowNew(false)} className="px-5 py-2 rounded-lg border text-sm text-gray-600">{t("cancel")}</button>
           </div>
         </div>
       )}
@@ -226,12 +225,12 @@ export default function SchedulesPage() {
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-semibold text-gray-800">Generated Schedule</h2>
+              <h2 className="font-semibold text-gray-800">{t("generatedSchedule")}</h2>
               <p className="text-xs text-gray-400 mt-0.5">{schedule.notes}</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => {}} className="px-3 py-1.5 rounded-lg border text-sm text-gray-600 hover:bg-gray-50">PDF</button>
-              <button onClick={() => {}} className="px-3 py-1.5 rounded-lg border text-sm text-gray-600 hover:bg-gray-50">Excel</button>
+              <button onClick={() => {}} className="px-3 py-1.5 rounded-lg border text-sm text-gray-600 hover:bg-gray-50">{t("pdf")}</button>
+              <button onClick={() => {}} className="px-3 py-1.5 rounded-lg border text-sm text-gray-600 hover:bg-gray-50">{t("excel")}</button>
               <button
                 onClick={async () => {
                   await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/schedules/${schedule.id}/publish`, { method: "POST", headers: headers() });
@@ -240,7 +239,7 @@ export default function SchedulesPage() {
                 className="px-3 py-1.5 rounded-lg text-sm text-white font-medium"
                 style={{ backgroundColor: schedule.published_at ? "#16a34a" : "#2c4a63" }}
               >
-                {schedule.published_at ? "Published ✓" : "Publish"}
+                {schedule.published_at ? t("publishedCheck") : t("publish")}
               </button>
             </div>
           </div>
@@ -250,7 +249,7 @@ export default function SchedulesPage() {
       {!schedule && !showNew && (
         <div className="text-center py-16 text-gray-400">
           <div className="text-5xl mb-4">📅</div>
-          <p>No schedule yet. Create a period and generate with AI.</p>
+          <p>{t("noScheduleYet")}</p>
         </div>
       )}
     </div>

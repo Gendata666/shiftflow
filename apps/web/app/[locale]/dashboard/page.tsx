@@ -1,8 +1,19 @@
-export default function DashboardPage() {
+import { getTranslations } from "next-intl/server";
+
+export default async function DashboardPage() {
+  const t = await getTranslations("dashboard");
+
+  const STAT_CARDS = [
+    { icon: "👥", value: "—", label: t("statStaff") },
+    { icon: "📅", value: "—", label: t("statSchedule") },
+    { icon: "💬", value: "—", label: t("statPending") },
+    { icon: "⚠️", value: "0", label: t("statBad") },
+  ];
+
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Dashboard</h1>
-      <p className="text-gray-500 mb-8">Welcome to ShiftFlow. Manage your team schedules below.</p>
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">{t("title")}</h1>
+      <p className="text-gray-500 mb-8">{t("welcome")}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {STAT_CARDS.map((s) => (
@@ -15,33 +26,26 @@ export default function DashboardPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 p-6">
-        <h2 className="font-semibold text-gray-700 mb-4">Quick Start</h2>
+        <h2 className="font-semibold text-gray-700 mb-4">{t("quickStart")}</h2>
         <ol className="space-y-3 text-sm text-gray-600">
           <li className="flex items-start gap-3">
             <span className="bg-blue-100 text-blue-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-xs">1</span>
-            Go to <strong>Staff</strong> and add your team members
+            {t.rich("step1", { strong: (chunks) => <strong>{chunks}</strong> })}
           </li>
           <li className="flex items-start gap-3">
             <span className="bg-blue-100 text-blue-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-xs">2</span>
-            Go to <strong>Schedules</strong>, create a period, and click <em>Generate with AI</em>
+            {t.rich("step2", { strong: (chunks) => <strong>{chunks}</strong>, em: (chunks) => <em>{chunks}</em> })}
           </li>
           <li className="flex items-start gap-3">
             <span className="bg-blue-100 text-blue-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-xs">3</span>
-            Review the schedule, make manual tweaks if needed, then <em>Publish</em>
+            {t.rich("step3", { em: (chunks) => <em>{chunks}</em> })}
           </li>
           <li className="flex items-start gap-3">
             <span className="bg-blue-100 text-blue-700 font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-xs">4</span>
-            Share the Telegram bot link with your staff so they can send shift preferences
+            {t("step4")}
           </li>
         </ol>
       </div>
     </div>
   );
 }
-
-const STAT_CARDS = [
-  { icon: "👥", value: "—", label: "Staff members" },
-  { icon: "📅", value: "—", label: "Active schedule" },
-  { icon: "💬", value: "—", label: "Pending preferences" },
-  { icon: "⚠️", value: "0", label: "BAD sequences" },
-];

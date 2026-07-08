@@ -45,6 +45,7 @@ export function getDemoDate(dayIndex: number): Date {
 }
 
 export const DAY_NAMES_BG = ["Пон", "Вт", "Ср", "Чет", "Пет", "Съб", "Нед"];
+export const DAY_NAMES_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const DEMO_PREFERENCES = [
   {

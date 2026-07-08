@@ -116,6 +116,33 @@ export async function generateSchedule(specId: string): Promise<GenerateResponse
   return res.json();
 }
 
+export type RunListItem = {
+  id: string;
+  created_at: string;
+  status: string;
+  spec_summary: string | null;
+};
+
+export async function listRuns(): Promise<RunListItem[]> {
+  const res = await fetch(`${API}/api/copilot/runs`, { headers: headers() });
+  if (!res.ok) throw new Error(res.statusText);
+  return res.json();
+}
+
+export type HoursReport = {
+  id: string;
+  name: string;
+  total_hours: number;
+  days_worked: number;
+  shifts_by_duration: Record<string, number>;
+};
+
+export async function getHoursReport(runId: string): Promise<HoursReport[]> {
+  const res = await fetch(`${API}/api/copilot/runs/${runId}/hours`, { headers: headers() });
+  if (!res.ok) throw new Error(res.statusText);
+  return res.json();
+}
+
 export function exportUrl(runId: string, format: "xlsx" | "pdf"): string {
   return `${API}/api/copilot/runs/${runId}/export.${format}`;
 }

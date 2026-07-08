@@ -28,7 +28,7 @@ from app.models.user import User
 from app.services import copilot
 from app.services.solver_runner import generate_async
 from app.services.spec_draft import apply_update
-from packages.scheduler.spec import GenerateReport, ScheduleSpec
+from packages.scheduler.spec import OFF, GenerateReport, ScheduleSpec
 
 router = APIRouter()
 
@@ -194,6 +194,63 @@ async def generate_schedule(
         "summary": copilot.report_summary(spec, report),
         "assignments": [a.model_dump(mode="json") for a in report.result.assignments],
     }
+
+
+@router.get("/runs")
+async def list_runs(
+    manager: User = Depends(require_manager),
+    db: AsyncSession = Depends(get_db),
+):
+    """Past solver runs for this tenant, most recent first — lets the UI
+    (e.g. Hours Analytics) offer a picker instead of requiring a run id."""
+    res = await db.execute(
+        select(ScheduleRun, SpecRecord.summary)
+        .join(SpecRecord, SpecRecord.id == ScheduleRun.spec_id)
+        .where(ScheduleRun.tenant_id == manager.tenant_id)
+        .order_by(ScheduleRun.created_at.desc())
+    )
+    return [
+        {
+            "id": run.id,
+            "created_at": run.created_at.isoformat(),
+            "status": run.status,
+            "spec_summary": spec_summary,
+        }
+        for run, spec_summary in res.all()
+    ]
+
+
+@router.get("/runs/{run_id}/hours")
+async def get_run_hours(
+    run_id: str,
+    manager: User = Depends(require_manager),
+    db: AsyncSession = Depends(get_db),
+):
+    """Per-staff hours breakdown for one run, aggregated from the stored
+    assignments — no re-solve needed."""
+    spec, report = await _load_run_with_spec(run_id, manager.tenant_id, db)
+
+    duration_hours = {s.id: (s.end_min - s.start_min) / 60 for s in spec.shifts}
+    names = {s.id: s.name for s in spec.staff}
+
+    by_staff: dict[str, dict] = {}
+    for a in report.result.assignments:
+        if a.shift_id == OFF:
+            continue
+        hours = duration_hours.get(a.shift_id, 0)
+        entry = by_staff.setdefault(a.staff_id, {
+            "id": a.staff_id,
+            "name": names.get(a.staff_id, a.staff_id),
+            "total_hours": 0,
+            "days_worked": 0,
+            "shifts_by_duration": {},
+        })
+        entry["total_hours"] += hours
+        entry["days_worked"] += 1
+        key = str(int(hours)) if hours == int(hours) else str(hours)
+        entry["shifts_by_duration"][key] = entry["shifts_by_duration"].get(key, 0) + 1
+
+    return sorted(by_staff.values(), key=lambda r: r["name"])
 
 
 @router.get("/runs/{run_id}")

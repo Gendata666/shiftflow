@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { isDemoMode } from "@/lib/demo-mode";
 import { DEMO_PREFERENCES } from "@/lib/demo-data";
 
@@ -7,13 +8,6 @@ type Pref = {
   id: string; staff_name: string; source: string; type: string;
   target_dates: string[]; raw_message: string | null; notes: string | null;
   status: string; created_at: string;
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  OFF_REQUEST: "Off request",
-  UNAVAILABLE: "Unavailable",
-  PREFERRED_SHIFT: "Preferred shift",
-  NOTES: "Note",
 };
 
 const SOURCE_ICONS: Record<string, string> = {
@@ -30,8 +24,16 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function PreferencesPage() {
+  const t = useTranslations("preferences");
   const [prefs, setPrefs] = useState<Pref[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const TYPE_LABELS: Record<string, string> = {
+    OFF_REQUEST: t("typeOffRequest"),
+    UNAVAILABLE: t("typeUnavailable"),
+    PREFERRED_SHIFT: t("typePreferredShift"),
+    NOTES: t("typeNote"),
+  };
 
   function headers() {
     return { Authorization: `Bearer ${localStorage.getItem("access_token")}` };
@@ -61,16 +63,15 @@ export default function PreferencesPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Staff Preferences</h1>
-      <p className="text-gray-500 text-sm mb-6">Pending requests from staff via Telegram, WhatsApp, Viber, or the web app.</p>
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">{t("title")}</h1>
+      <p className="text-gray-500 text-sm mb-6">{t("subtitle")}</p>
 
       {loading ? (
-        <div className="text-gray-400 text-sm">Loading...</div>
+        <div className="text-gray-400 text-sm">{t("loading")}</div>
       ) : prefs.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <div className="text-5xl mb-4">💬</div>
-          <p>No pending preferences. When staff send requests via bot, they appear here.</p>
-          {/* eslint-disable-next-line react/no-unescaped-entities */}
+          <p>{t("noPending")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -92,9 +93,9 @@ export default function PreferencesPage() {
               {p.status === "PENDING" && (
                 <div className="flex gap-2 flex-shrink-0">
                   <button onClick={() => resolve(p.id, "approve")}
-                    className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700">Approve</button>
+                    className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700">{t("approve")}</button>
                   <button onClick={() => resolve(p.id, "reject")}
-                    className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50">Reject</button>
+                    className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50">{t("reject")}</button>
                 </div>
               )}
             </div>

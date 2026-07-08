@@ -1,15 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { isDemoMode } from "@/lib/demo-mode";
 import { DEMO_ANALYTICS } from "@/lib/demo-data";
-
-type HoursReport = {
-  id: string; name: string; total_hours: number; days_worked: number;
-  shifts_by_duration: Record<number, number>;
-};
+import { listRuns, getHoursReport, type RunListItem, type HoursReport } from "@/lib/copilot-api";
 
 export default function AnalyticsPage() {
-  const [scheduleId, setScheduleId] = useState("");
+  const t = useTranslations("analytics");
+  const [runs, setRuns] = useState<RunListItem[]>([]);
+  const [selectedRun, setSelectedRun] = useState("");
   const [report, setReport] = useState<HoursReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
@@ -18,41 +17,47 @@ export default function AnalyticsPage() {
     if (isDemoMode()) {
       setIsDemo(true);
       setReport(DEMO_ANALYTICS as HoursReport[]);
+      return;
     }
+    (async () => {
+      const list = await listRuns();
+      setRuns(list);
+      if (list.length > 0) {
+        setSelectedRun(list[0].id);
+        await load(list[0].id);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function headers() {
-    return { Authorization: `Bearer ${localStorage.getItem("access_token")}` };
-  }
-
-  async function load() {
-    if (!scheduleId.trim()) return;
+  async function load(runId: string) {
+    if (!runId) return;
     setLoading(true);
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/hours/${scheduleId}`, { headers: headers() });
-    if (res.ok) setReport(await res.json());
+    setReport(await getHoursReport(runId));
     setLoading(false);
   }
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Hours Analytics</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">{t("title")}</h1>
       {isDemo && (
-        <p className="text-sm text-gray-500 mb-6">Beach Bar · July 2026 · 28 days · 4 bartenders</p>
+        <p className="text-sm text-gray-500 mb-6">{t("demoSubtitle")}</p>
       )}
 
-      {!isDemo && (
+      {!isDemo && runs.length > 0 && (
         <div className="flex gap-3 mb-6">
-          <input
-            placeholder="Paste schedule ID…"
-            value={scheduleId}
-            onChange={(e) => setScheduleId(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm w-72"
-          />
-          <button onClick={load} disabled={loading}
-            className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-60"
-            style={{ backgroundColor: "#2c4a63" }}>
-            {loading ? "Loading…" : "Load Report"}
-          </button>
+          <select
+            value={selectedRun}
+            onChange={(e) => { setSelectedRun(e.target.value); load(e.target.value); }}
+            className="border rounded-lg px-3 py-2 text-sm w-96"
+          >
+            {runs.map((r) => (
+              <option key={r.id} value={r.id}>
+                {new Date(r.created_at).toLocaleString()} — {r.spec_summary ?? r.status}
+              </option>
+            ))}
+          </select>
+          {loading && <span className="px-4 py-2 text-sm text-gray-400">{t("loading")}</span>}
         </div>
       )}
 
@@ -61,12 +66,12 @@ export default function AnalyticsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left" style={{ backgroundColor: "#1a2e44" }}>
-                <th className="px-4 py-3 font-medium text-white">Name</th>
-                <th className="px-4 py-3 font-medium text-white text-center">Days worked</th>
-                <th className="px-4 py-3 font-medium text-white text-center">8h shifts</th>
-                <th className="px-4 py-3 font-medium text-white text-center">10h shifts</th>
-                <th className="px-4 py-3 font-medium text-white text-center">12h shifts</th>
-                <th className="px-4 py-3 font-medium text-white text-center">Total hours</th>
+                <th className="px-4 py-3 font-medium text-white">{t("name")}</th>
+                <th className="px-4 py-3 font-medium text-white text-center">{t("daysWorked")}</th>
+                <th className="px-4 py-3 font-medium text-white text-center">{t("hShifts", { h: 8 })}</th>
+                <th className="px-4 py-3 font-medium text-white text-center">{t("hShifts", { h: 10 })}</th>
+                <th className="px-4 py-3 font-medium text-white text-center">{t("hShifts", { h: 12 })}</th>
+                <th className="px-4 py-3 font-medium text-white text-center">{t("totalHours")}</th>
               </tr>
             </thead>
             <tbody>
@@ -96,7 +101,7 @@ export default function AnalyticsPage() {
       {report.length === 0 && !loading && (
         <div className="text-center py-16 text-gray-400">
           <div className="text-5xl mb-4">📊</div>
-          <p>Enter a schedule ID above to see the hours report.</p>
+          <p>{runs.length === 0 ? t("noSchedulesYet") : t("selectSchedule")}</p>
         </div>
       )}
     </div>

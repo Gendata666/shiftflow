@@ -1,6 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { isDemoMode } from "@/lib/demo-mode";
+import { DAY_NAMES_BG, DAY_NAMES_EN } from "@/lib/demo-data";
 import {
   Assignment,
   ChatEvent,
@@ -15,11 +17,11 @@ import {
   updateSpecFromBrief,
 } from "@/lib/copilot-api";
 
-const DAY_NAMES_BG = ["Пон", "Вт", "Ср", "Чет", "Пет", "Съб", "Нед"];
-
 type ChatMsg = { role: "user" | "assistant"; text: string; tools?: string[] };
 
 export default function CopilotPage() {
+  const t = useTranslations("copilot");
+
   const [spec, setSpec] = useState<SpecPayload | null>(null);
   const [run, setRun] = useState<GenerateResponse | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function CopilotPage() {
     return (
       <div className="p-8 text-center text-gray-400">
         <div className="text-5xl mb-4">🤖</div>
-        <p>AI Copilot изисква реален акаунт — демо режимът показва само примерния график.</p>
+        <p>{t("demoNotice")}</p>
       </div>
     );
   }
@@ -57,7 +59,7 @@ export default function CopilotPage() {
   }
 
   async function onParse() {
-    const result = await guard("Интерпретирам заданието…", () =>
+    const result = await guard(t("busyParsing"), () =>
       parseBrief({ brief, start_date: startDate, num_days: numDays })
     );
     if (result) {
@@ -68,7 +70,7 @@ export default function CopilotPage() {
 
   async function onUpdate() {
     if (!spec) return;
-    const result = await guard("Прилагам промените…", () => updateSpecFromBrief(spec.id, brief));
+    const result = await guard(t("busyUpdating"), () => updateSpecFromBrief(spec.id, brief));
     if (result) {
       setSpec(result);
       setRun(null);
@@ -78,13 +80,13 @@ export default function CopilotPage() {
 
   async function onConfirm() {
     if (!spec) return;
-    await guard("Потвърждавам…", () => confirmSpec(spec.id));
+    await guard(t("busyConfirming"), () => confirmSpec(spec.id));
     setSpec({ ...spec, status: "ACTIVE" });
   }
 
   async function onGenerate() {
     if (!spec) return;
-    const result = await guard("Генерирам график (CP-SAT)…", () => generateSchedule(spec.id));
+    const result = await guard(t("busyGenerating"), () => generateSchedule(spec.id));
     if (result) setRun(result);
   }
 
@@ -126,10 +128,8 @@ export default function CopilotPage() {
 
   return (
     <div className="p-6 max-w-[1500px]">
-      <h1 className="text-2xl font-bold text-gray-800 mb-1">AI Copilot</h1>
-      <p className="text-sm text-gray-500 mb-5">
-        Опиши правилата за смените на естествен език — AI ги превежда в проверими правила, солвърът изгражда графика.
-      </p>
+      <h1 className="text-2xl font-bold text-gray-800 mb-1">{t("title")}</h1>
+      <p className="text-sm text-gray-500 mb-5">{t("subtitle")}</p>
 
       {error && (
         <div className="mb-4 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>
@@ -140,24 +140,24 @@ export default function CopilotPage() {
         <div className="space-y-5">
           <div className="bg-white rounded-xl border border-gray-100 p-5">
             <h2 className="font-semibold text-gray-700 mb-3">
-              {spec ? "Допълнително задание (сливат се с текущите правила)" : "Задание от мениджъра"}
+              {spec ? t("briefLabelUpdate") : t("briefLabelNew")}
             </h2>
             <textarea
               value={brief}
               onChange={(e) => setBrief(e.target.value)}
               rows={8}
-              placeholder="Постави заданието тук — напр. „Създай месечен график за 4 бармани… всяка седмица 2×8ч + 2×10ч + 3×12ч…“"
+              placeholder={t("briefPlaceholder")}
               className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
             />
             {!spec && (
               <div className="grid grid-cols-2 gap-3 mt-3">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Начална дата</label>
+                  <label className="block text-xs text-gray-500 mb-1">{t("startDate")}</label>
                   <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
                     className="w-full border rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Брой дни</label>
+                  <label className="block text-xs text-gray-500 mb-1">{t("numDays")}</label>
                   <input type="number" value={numDays} onChange={(e) => setNumDays(Number(e.target.value))}
                     className="w-full border rounded-lg px-3 py-2 text-sm" />
                 </div>
@@ -169,7 +169,7 @@ export default function CopilotPage() {
               className="mt-3 px-5 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50"
               style={{ backgroundColor: "#2c4a63" }}
             >
-              {busy ?? (spec ? "Интерпретирай промените" : "Интерпретирай заданието")}
+              {busy ?? (spec ? t("interpretChanges") : t("interpretBrief"))}
             </button>
           </div>
 
@@ -185,12 +185,12 @@ export default function CopilotPage() {
           {/* Chat */}
           {spec && spec.status === "ACTIVE" && (
             <div className="bg-white rounded-xl border border-gray-100 p-5">
-              <h2 className="font-semibold text-gray-700 mb-3">Разговор с копилота</h2>
+              <h2 className="font-semibold text-gray-700 mb-3">{t("chatTitle")}</h2>
               <div className="max-h-80 overflow-y-auto space-y-3 mb-3">
                 {messages.map((m, i) => (
                   <div key={i} className={m.role === "user" ? "text-right" : ""}>
-                    {m.tools?.map((t, j) => (
-                      <div key={j} className="text-xs text-gray-400 italic mb-1">⚙ {toolLabel(t)}</div>
+                    {m.tools?.map((tool, j) => (
+                      <div key={j} className="text-xs text-gray-400 italic mb-1">⚙ {toolLabel(t, tool)}</div>
                     ))}
                     <div
                       className={`inline-block px-3 py-2 rounded-xl text-sm whitespace-pre-wrap text-left max-w-[85%] ${
@@ -208,7 +208,7 @@ export default function CopilotPage() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && onChat()}
-                  placeholder='напр. „Защо Афродита затваря 3 уикенда?“ или „Добави: никой не работи повече от 5 поредни дни“'
+                  placeholder={t("chatPlaceholder")}
                   className="flex-1 border rounded-lg px-3 py-2 text-sm"
                 />
                 <button onClick={onChat} className="px-4 py-2 rounded-lg text-white text-sm" style={{ backgroundColor: "#2c4a63" }}>
@@ -230,7 +230,7 @@ export default function CopilotPage() {
           {!run && (
             <div className="bg-white rounded-xl border border-dashed border-gray-200 p-12 text-center text-gray-400">
               <div className="text-4xl mb-3">📅</div>
-              Графикът се появява тук след генериране.
+              {t("emptyGridNotice")}
             </div>
           )}
         </div>
@@ -239,12 +239,12 @@ export default function CopilotPage() {
   );
 }
 
-function toolLabel(name: string): string {
+function toolLabel(t: ReturnType<typeof useTranslations>, name: string): string {
   const map: Record<string, string> = {
-    get_spec: "чета правилата",
-    apply_spec_update: "прилагам промяна в правилата",
-    generate_schedule: "генерирам график",
-    get_verification_report: "чета проверката",
+    get_spec: t("toolGetSpec"),
+    apply_spec_update: t("toolApplySpecUpdate"),
+    generate_schedule: t("toolGenerateSchedule"),
+    get_verification_report: t("toolGetVerificationReport"),
   };
   return map[name] ?? name;
 }
@@ -257,18 +257,20 @@ function SpecCard({
   onGenerate: () => void;
   busy: string | null;
 }) {
+  const t = useTranslations("copilot");
+
   const enforcementBadge = (r: { enforcement: string; relaxable: boolean; auto_repair: boolean }) => {
-    if (r.enforcement === "hard" && r.relaxable) return ["max. близко", "#fef3c7", "#b45309"];
-    if (r.enforcement === "hard") return ["задължително", "#fee2e2", "#b91c1c"];
-    if (r.auto_repair) return ["авто-поправка", "#e0e7ff", "#4338ca"];
-    return ["желателно", "#dbeafe", "#1d4ed8"];
+    if (r.enforcement === "hard" && r.relaxable) return [t("badgeAsCloseAsPossible"), "#fef3c7", "#b45309"];
+    if (r.enforcement === "hard") return [t("badgeMandatory"), "#fee2e2", "#b91c1c"];
+    if (r.auto_repair) return [t("badgeAutoRepair"), "#e0e7ff", "#4338ca"];
+    return [t("badgePreferred"), "#dbeafe", "#1d4ed8"];
   };
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-5">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-gray-700">
-          Интерпретирани правила <span className="text-xs text-gray-400">v{spec.version}</span>
+          {t("interpretedRules")} <span className="text-xs text-gray-400">v{spec.version}</span>
         </h2>
         <span
           className="px-2 py-0.5 rounded text-xs font-medium"
@@ -277,7 +279,7 @@ function SpecCard({
             color: spec.status === "ACTIVE" ? "#15803d" : "#b45309",
           }}
         >
-          {spec.status === "ACTIVE" ? "потвърдени" : "чакат потвърждение"}
+          {spec.status === "ACTIVE" ? t("statusActive") : t("statusDraft")}
         </span>
       </div>
 
@@ -285,7 +287,7 @@ function SpecCard({
 
       {(spec.assumptions?.length ?? 0) > 0 && (
         <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
-          <div className="text-xs font-semibold text-amber-800 mb-1">Предположения — провери ги:</div>
+          <div className="text-xs font-semibold text-amber-800 mb-1">{t("assumptionsTitle")}</div>
           {spec.assumptions!.map((a, i) => (
             <div key={i} className="text-xs text-amber-700">• {a}</div>
           ))}
@@ -295,7 +297,7 @@ function SpecCard({
       <div className="flex flex-wrap gap-1.5 mb-3">
         {spec.overview.shifts.map((s) => (
           <span key={s.id} className="px-2 py-0.5 rounded text-xs border border-gray-200 bg-gray-50">
-            {s.time} · {s.hours}ч{!s.preferred && " (резервна)"}
+            {s.time} · {t("hoursShort", { h: s.hours })}{!s.preferred && ` ${t("fallbackShift")}`}
           </span>
         ))}
       </div>
@@ -320,13 +322,13 @@ function SpecCard({
           <button onClick={onConfirm} disabled={!!busy}
             className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50"
             style={{ backgroundColor: "#16a34a" }}>
-            Потвърди правилата
+            {t("confirmRules")}
           </button>
         )}
         <button onClick={onGenerate} disabled={!!busy || spec.status !== "ACTIVE"}
           className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50"
           style={{ backgroundColor: "#2c4a63" }}>
-          {busy?.startsWith("Генерирам") ? busy : "Генерирай график"}
+          {busy === t("busyGenerating") ? busy : t("generateSchedule")}
         </button>
       </div>
     </div>
@@ -334,6 +336,7 @@ function SpecCard({
 }
 
 function VerificationCard({ summary, runId }: { summary: RunSummary; runId: string }) {
+  const t = useTranslations("copilot");
   const statusColor: Record<string, [string, string]> = {
     ok: ["#dcfce7", "#15803d"],
     relaxed: ["#fef3c7", "#b45309"],
@@ -343,7 +346,7 @@ function VerificationCard({ summary, runId }: { summary: RunSummary; runId: stri
     <div className="bg-white rounded-xl border border-gray-100 p-5">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-gray-700">
-          Проверка на правилата {summary.clean ? "✅" : "⚠️"}
+          {t("verificationTitle")} {summary.clean ? "✅" : "⚠️"}
         </h2>
         <div className="flex gap-2">
           <button onClick={() => downloadExport(runId, "xlsx")}
@@ -354,7 +357,7 @@ function VerificationCard({ summary, runId }: { summary: RunSummary; runId: stri
       </div>
       {summary.relaxed_rules_impossible_to_fully_satisfy.length > 0 && (
         <p className="text-xs text-amber-700 mb-2">
-          Математически невъзможни за пълно спазване (минимизирани): {summary.relaxed_rules_impossible_to_fully_satisfy.join(", ")}
+          {t("impossibleRules", { list: summary.relaxed_rules_impossible_to_fully_satisfy.join(", ") })}
         </p>
       )}
       <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -363,7 +366,7 @@ function VerificationCard({ summary, runId }: { summary: RunSummary; runId: stri
           return (
             <div key={f.rule} className="flex items-center gap-2 text-xs">
               <span className="px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: bg, color: fg }}>
-                {f.status === "ok" ? "OK" : f.status === "relaxed" ? `невъзможно ×${f.violations}` : `нарушено ×${f.violations}`}
+                {f.status === "ok" ? t("findingOk") : f.status === "relaxed" ? t("findingRelaxed", { n: f.violations }) : t("findingViolated", { n: f.violations })}
               </span>
               <span className="text-gray-600 truncate">{f.rule}{f.detail && f.status !== "ok" ? ` — ${f.detail}` : ""}</span>
             </div>
@@ -381,6 +384,9 @@ function ScheduleGrid({
   assignments: Assignment[];
   findings: RunSummary["findings"];
 }) {
+  const t = useTranslations("copilot");
+  const locale = useLocale();
+  const dayNames = locale === "bg" ? DAY_NAMES_BG : DAY_NAMES_EN;
   const shiftById = new Map(spec.spec.shifts.map((s) => [s.id, s]));
   const staff = spec.overview.staff;
   const days = Array.from(new Set(assignments.map((a) => a.date))).sort();
@@ -391,18 +397,18 @@ function ScheduleGrid({
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-5 overflow-x-auto">
-      <h2 className="font-semibold text-gray-700 mb-3">График {hasProblems ? "" : "· всички правила спазени"}</h2>
+      <h2 className="font-semibold text-gray-700 mb-3">{t("gridTitle")} {hasProblems ? "" : `· ${t("allRulesOk")}`}</h2>
       <table className="text-[11px] border-collapse w-full" style={{ minWidth: "700px" }}>
         <thead>
           <tr>
-            <th className="px-2 py-1.5 text-left text-white sticky left-0" style={{ backgroundColor: "#1a2e44" }}>Служител</th>
+            <th className="px-2 py-1.5 text-left text-white sticky left-0" style={{ backgroundColor: "#1a2e44" }}>{t("staffColumn")}</th>
             {days.map((d) => {
               const date = new Date(d);
               const wd = (date.getDay() + 6) % 7;
               return (
                 <th key={d} className="px-1 py-1 text-center font-medium"
                   style={{ backgroundColor: wd >= 4 ? "#e8eef5" : "#eef2f7", color: "#555" }}>
-                  <div>{DAY_NAMES_BG[wd]}</div>
+                  <div>{dayNames[wd]}</div>
                   <div className="text-gray-400 font-normal">{date.getDate()}</div>
                 </th>
               );
